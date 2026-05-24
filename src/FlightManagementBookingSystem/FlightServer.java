@@ -49,6 +49,10 @@ public class FlightServer {
                 System.out.println("Using SQLite database (local development)");
             } else {
                 // Use PostgreSQL for production
+                // Convert postgresql:// to jdbc:postgresql:// if needed
+                if (!dbUrl.startsWith("jdbc:")) {
+                    dbUrl = "jdbc:" + dbUrl;
+                }
                 System.out.println("Using PostgreSQL database (production)");
             }
             
