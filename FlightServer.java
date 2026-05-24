@@ -79,6 +79,7 @@ public class FlightServer {
             
             // Connect to database
             System.out.println("Connecting to: " + dbUrl);
+            System.out.println("Attempting database connection...");
             connection = DriverManager.getConnection(dbUrl);
             
             Statement stmt = connection.createStatement();
