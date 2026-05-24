@@ -29,7 +29,7 @@ public class BookingService {
 
         }
         Flight f=flight.get();
-        if(!flightService.reduceService(flightId,seats)){
+        if(!flightService.reduceSeats(flightId,seats)){
             return Optional.empty();
 
         }double totalAmount=seats*f.getPrice();

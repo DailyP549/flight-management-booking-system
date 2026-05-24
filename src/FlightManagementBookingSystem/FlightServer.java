@@ -13,7 +13,7 @@ import org.json.JSONArray;
 
 public class FlightServer {
     private static Connection connection;
-    private static final int PORT = 8080;
+    private static final int PORT = Integer.parseInt(System.getenv("PORT") != null ? System.getenv("PORT") : "8080");
 
     public static void main(String[] args) {
         try {
@@ -41,11 +41,49 @@ public class FlightServer {
 
     private static void initializeDatabase() {
         try {
-            // Load SQLite driver
-            Class.forName("org.sqlite.JDBC");
+            // Get database URL from environment variable (Supabase PostgreSQL)
+            String dbUrl = System.getenv("DATABASE_URL");
+            if (dbUrl == null || dbUrl.isEmpty()) {
+                // Fallback to SQLite for local development
+                dbUrl = "jdbc:sqlite:flight_booking.db";
+                System.out.println("Using SQLite database (local development)");
+            } else {
+                // Use PostgreSQL for production
+                System.out.println("Using PostgreSQL database (production)");
+            }
             
-            // Connect to SQLite database
-            connection = DriverManager.getConnection("jdbc:sqlite:flight_booking.db");
+            // Load the appropriate driver
+            if (dbUrl.contains("postgresql")) {
+                try {
+                    Class.forName("org.postgresql.Driver").newInstance();
+                    System.out.println("PostgreSQL driver loaded successfully");
+                } catch (ClassNotFoundException e) {
+                    System.err.println("Failed to load PostgreSQL driver: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                } catch (InstantiationException | IllegalAccessException e) {
+                    System.err.println("Failed to instantiate PostgreSQL driver: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                }
+            } else {
+                try {
+                    Class.forName("org.sqlite.JDBC").newInstance();
+                    System.out.println("SQLite driver loaded successfully");
+                } catch (ClassNotFoundException e) {
+                    System.err.println("Failed to load SQLite driver: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                } catch (InstantiationException | IllegalAccessException e) {
+                    System.err.println("Failed to instantiate SQLite driver: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                }
+            }
+            
+            // Connect to database
+            System.out.println("Connecting to: " + dbUrl);
+            connection = DriverManager.getConnection(dbUrl);
             
             Statement stmt = connection.createStatement();
             
@@ -88,7 +126,7 @@ public class FlightServer {
             
             System.out.println("Database initialized successfully!");
             stmt.close();
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -470,9 +508,11 @@ public class FlightServer {
             // Try multiple possible paths
             File file = null;
             String[] possiblePaths = {
+                path.substring(1),  // For Docker: files in /app directory
                 "src/FlightManagementBookingSystem" + path,
                 "FlightManagementBookingSystem" + path,
-                System.getProperty("user.dir") + "/src/FlightManagementBookingSystem" + path
+                System.getProperty("user.dir") + "/src/FlightManagementBookingSystem" + path,
+                "/app" + path  // Docker absolute path
             };
             
             for (String filePath : possiblePaths) {

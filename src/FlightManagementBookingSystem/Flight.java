@@ -53,6 +53,9 @@ public class Flight {
     public int getAvailableSeats() {
         return availableSeats;
     }
+    public int getTotalSeats() {
+        return totalSeats;
+    }
     public void setAvailableSeats(int availableSeats){
       this.availableSeats=availableSeats;
     }

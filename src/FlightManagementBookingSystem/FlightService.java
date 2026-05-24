@@ -24,7 +24,7 @@ public class FlightService {
         return Optional.ofNullable(flightsData.getFlights().get(id));
    }
    public List<Flight> getFlights(){return new ArrayList<>(flightsData.getFlights().values());}
-    public boolean reduceService(String flightId,int seats){
+    public boolean reduceSeats(String flightId,int seats){
         Flight flight=flightsData.getFlights().get(flightId);
         if(flight==null){
             return false;
@@ -39,7 +39,7 @@ public class FlightService {
     public  void increaseSeats(String flightId,int seats){
         Flight flight=flightsData.getFlights().get(flightId);
         if(flight!=null && seats>0){
-           int newAvailableSeats=Math.min(flight.getAvailableSeats(),flight.getAvailableSeats()+seats);
+           int newAvailableSeats=Math.min(flight.getTotalSeats(),flight.getAvailableSeats()+seats);
             flight.setAvailableSeats(newAvailableSeats);
 
         }
@@ -50,8 +50,8 @@ public class FlightService {
         String dest=destination.trim().toUpperCase();
         return flightsData.getFlights().values().stream()
                 .filter(f->f.getSource().equals(src))
-                .filter(f->f.getDestination().equals(src))
-                .filter(f->f.getDepartureTime().toLocalDate().equals(date))
+                .filter(f->f.getDestination().equals(dest))
+                .filter(f->f.getDepartureTime().toLocalDate().equals(date.toLocalDate()))
                 .sorted(Comparator.comparing(Flight::getDepartureTime))
                 .collect(Collectors.toList());
     }
