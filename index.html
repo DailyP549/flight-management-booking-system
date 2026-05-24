@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Management Booking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .btn-glow:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen text-white overflow-x-hidden">
+    <!-- Three.js Background -->
+    <div id="canvas-container"></div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl relative z-10">
+        <!-- Header -->
+        <header class="glass rounded-3xl p-8 mb-8 animate-fade-in shadow-2xl">
+            <div class="text-center">
+                <h1 class="text-6xl font-black mb-4 animate-float">
+                    <span class="inline-block">✈️</span>
+                    <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        Flight Management
+                    </span>
+                </h1>
+                <p class="text-xl text-gray-200 font-light tracking-wide">Book your dreams, fly beyond the clouds</p>
+            </div>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass rounded-2xl p-6 card-hover animate-slide-up" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-4xl">🛫</div>
+                    <div class="text-5xl font-bold text-blue-400" id="totalFlights">0</div>
+                </div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Total Flights</h3>
+            </div>
+            <div class="glass rounded-2xl p-6 card-hover animate-slide-up" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-4xl">👥</div>
+                    <div class="text-5xl font-bold text-purple-400" id="totalPassengers">0</div>
+                </div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Passengers</h3>
+            </div>
+            <div class="glass rounded-2xl p-6 card-hover animate-slide-up" style="animation-delay: 0.3s">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-4xl">🎫</div>
+                    <div class="text-5xl font-bold text-pink-400" id="totalBookings">0</div>
+                </div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Bookings</h3>
+            </div>
+            <div class="glass rounded-2xl p-6 card-hover animate-slide-up" style="animation-delay: 0.4s">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-4xl">💺</div>
+                    <div class="text-5xl font-bold text-green-400" id="totalSeats">0</div>
+                </div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Available Seats</h3>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="glass rounded-2xl p-2 mb-8 flex flex-wrap gap-2 animate-fade-in">
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg" onclick="showTab('availableFlights')">
+                🌍 Available Flights
+            </button>
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 text-gray-200" onclick="showTab('addFlight')">
+                ➕ Add Flight
+            </button>
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 text-gray-200" onclick="showTab('addPassenger')">
+                👤 Add Passenger
+            </button>
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 text-gray-200" onclick="showTab('createBooking')">
+                🎫 Book Now
+            </button>
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 text-gray-200" onclick="showTab('viewPassengers')">
+                👥 Passengers
+            </button>
+            <button class="tab-btn flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 text-gray-200" onclick="showTab('viewBookings')">
+                📋 Bookings
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        <!-- Available Flights -->
+        <div id="availableFlights" class="tab-content animate-fade-in">
+            <div class="flex gap-4 mb-6">
+                <button class="btn-glow bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all" onclick="loadAvailableFlights()">
+                    🔄 Refresh
+                </button>
+                <button class="btn-glow bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all" onclick="showTab('createBooking'); populateBookingDropdowns();">
+                    🎫 Book a Flight
+                </button>
+            </div>
+            <div id="availableFlightsList" class="grid gap-6"></div>
+        </div>
+
+        <!-- Add Flight -->
+        <div id="addFlight" class="tab-content hidden animate-slide-up">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Add New Flight</h2>
+            <form id="flightForm" class="glass rounded-2xl p-8 space-y-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Source City</label>
+                        <input type="text" id="flightSource" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" placeholder="e.g., New York" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Destination City</label>
+                        <input type="text" id="flightDestination" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" placeholder="e.g., Los Angeles" required>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Departure Date & Time</label>
+                        <input type="datetime-local" id="flightDeparture" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Arrival Date & Time</label>
+                        <input type="datetime-local" id="flightArrival" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" required>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Total Seats</label>
+                        <input type="number" id="flightSeats" min="1" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 text-gray-200">Price per Seat ($)</label>
+                        <input type="number" id="flightPrice" step="0.01" min="0" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-glow w-full bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all">
+                    ➕ Add Flight
+                </button>
+                <div id="flightMessage" class="message hidden"></div>
+            </form>
+        </div>
+
+        <!-- Add Passenger -->
+        <div id="addPassenger" class="tab-content hidden animate-slide-up">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">Add New Passenger</h2>
+            <form id="passengerForm" class="glass rounded-2xl p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Full Name</label>
+                    <input type="text" id="passengerName" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400/50 transition-all" placeholder="e.g., John Doe" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Email</label>
+                    <input type="email" id="passengerEmail" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400/50 transition-all" placeholder="e.g., john@email.com" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Phone</label>
+                    <input type="tel" id="passengerPhone" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400/50 transition-all" placeholder="e.g., 1234567890" required>
+                </div>
+                <button type="submit" class="btn-glow w-full bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all">
+                    ➕ Add Passenger
+                </button>
+                <div id="passengerMessage" class="message hidden"></div>
+            </form>
+        </div>
+
+        <!-- Create Booking -->
+        <div id="createBooking" class="tab-content hidden animate-slide-up">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Create New Booking</h2>
+            <form id="bookingForm" class="glass rounded-2xl p-8 space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Select Flight</label>
+                    <select id="bookingFlightSelect" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-400/50 transition-all" required>
+                        <option value="">-- Choose a Flight --</option>
+                    </select>
+                </div>
+                <div id="selectedFlightInfo" class="glass rounded-xl p-4 hidden">
+                    <h4 class="font-semibold mb-2 text-blue-400">Flight Details:</h4>
+                    <p id="flightDetailsText" class="text-gray-200"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Select Passenger</label>
+                    <select id="bookingPassengerSelect" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-400/50 transition-all" required>
+                        <option value="">-- Choose a Passenger --</option>
+                    </select>
+                </div>
+                <div id="selectedPassengerInfo" class="glass rounded-xl p-4 hidden">
+                    <h4 class="font-semibold mb-2 text-purple-400">Passenger Details:</h4>
+                    <p id="passengerDetailsText" class="text-gray-200"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-2 text-gray-200">Number of Seats <span id="availableSeatsHint" class="text-sm text-gray-400"></span></label>
+                    <input type="number" id="bookingSeats" min="1" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-400/50 transition-all" required>
+                </div>
+                <div id="priceEstimate" class="glass rounded-xl p-4 hidden bg-gradient-to-r from-green-500/20 to-emerald-500/20">
+                    <h4 class="font-semibold mb-2 text-green-400">Estimated Total:</h4>
+                    <p class="text-4xl font-bold text-green-400" id="priceEstimateText"></p>
+                </div>
+                <button type="submit" class="btn-glow w-full bg-gradient-to-r from-pink-500 to-purple-500 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all">
+                    ✅ Create Booking
+                </button>
+                <div id="bookingMessage" class="message hidden"></div>
+            </form>
+        </div>
+
+        <!-- View Passengers -->
+        <div id="viewPassengers" class="tab-content hidden animate-fade-in">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">All Passengers</h2>
+            <button class="btn-glow bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-3 rounded-xl font-semibold shadow-lg mb-6" onclick="loadPassengers()">
+                🔄 Refresh
+            </button>
+            <div class="glass rounded-2xl overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-yellow-500/20 to-orange-500/20">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-bold">ID</th>
+                            <th class="px-6 py-4 text-left font-bold">Name</th>
+                            <th class="px-6 py-4 text-left font-bold">Email</th>
+                            <th class="px-6 py-4 text-left font-bold">Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passengersBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- View Bookings -->
+        <div id="viewBookings" class="tab-content hidden animate-fade-in">
+            <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">All Bookings</h2>
+            <button class="btn-glow bg-gradient-to-r from-red-500 to-pink-500 px-6 py-3 rounded-xl font-semibold shadow-lg mb-6" onclick="loadBookings()">
+                🔄 Refresh
+            </button>
+            <div class="glass rounded-2xl overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-red-500/20 to-pink-500/20">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-bold">ID</th>
+                            <th class="px-6 py-4 text-left font-bold">Flight</th>
+                            <th class="px-6 py-4 text-left font-bold">Passenger</th>
+                            <th class="px-6 py-4 text-left font-bold">Seats</th>
+                            <th class="px-6 py-4 text-left font-bold">Amount</th>
+                            <th class="px-6 py-4 text-left font-bold">Date/Time</th>
+                            <th class="px-6 py-4 text-left font-bold">Status</th>
+                            <th class="px-6 py-4 text-left font-bold">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="three-background.js"></script>
+</body>
+</html>

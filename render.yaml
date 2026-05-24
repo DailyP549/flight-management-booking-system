@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: flight-management-booking-system
+    env: docker
+    region: oregon
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/stats
+    autoDeploy: true
