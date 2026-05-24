@@ -18,8 +18,8 @@ COPY styles.css .
 COPY app.js .
 COPY three-background.js .
 
-# Build the application
-RUN mvn clean package -DskipTests
+# Build the application (clearing cache)
+RUN mvn clean package -DskipTests -B
 
 # Expose port
 EXPOSE 10000
