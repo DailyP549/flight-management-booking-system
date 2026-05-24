@@ -55,27 +55,19 @@ public class FlightServer {
             // Load the appropriate driver
             if (dbUrl.contains("postgresql")) {
                 try {
-                    Class.forName("org.postgresql.Driver").newInstance();
+                    Class.forName("org.postgresql.Driver");
                     System.out.println("PostgreSQL driver loaded successfully");
                 } catch (ClassNotFoundException e) {
                     System.err.println("Failed to load PostgreSQL driver: " + e.getMessage());
                     e.printStackTrace();
                     return;
-                } catch (InstantiationException | IllegalAccessException e) {
-                    System.err.println("Failed to instantiate PostgreSQL driver: " + e.getMessage());
-                    e.printStackTrace();
-                    return;
                 }
             } else {
                 try {
-                    Class.forName("org.sqlite.JDBC").newInstance();
+                    Class.forName("org.sqlite.JDBC");
                     System.out.println("SQLite driver loaded successfully");
                 } catch (ClassNotFoundException e) {
                     System.err.println("Failed to load SQLite driver: " + e.getMessage());
-                    e.printStackTrace();
-                    return;
-                } catch (InstantiationException | IllegalAccessException e) {
-                    System.err.println("Failed to instantiate SQLite driver: " + e.getMessage());
                     e.printStackTrace();
                     return;
                 }
